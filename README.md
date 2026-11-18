@@ -1,145 +1,47 @@
 # Performative Beta Trap: ETF Backtest Replication
 
-Reproduce transparent, accounting-based portfolio selection for US and European thematic equity universes using frozen market data and dated original financial statements.
+How did two accounting-based stock selection rules perform against holding the same candidates at equal weight? The backtests use dated financial statements and frozen market prices. [Read the article and explore the interactive charts](https://beta-blockers.github.io/beta_correcting_ETFs_backtests/).
 
-**Research snapshot:** 4 November 2026. **Market-data endpoint:** 2 November 2026. **Python:** 3.10 or later; the released computation was verified with Python 3.12.14. **License:** [MIT](LICENSE) for project-authored code and documentation.
+## Current baseline results
 
-This repository accompanies MIT LEAD's Research to Trades, ["Performative beta trap"-correcting ETFs](https://mitleadtrades.substack.com/p/performative-beta-trap-correcting), published 3 June 2026. The article proposes using transparent portfolio admission and removal rules to reward corporate execution and improve the allocation of investor attention.
+**Cumulative return, 30 June 2019 to 2 November 2026**, after modeled costs of 10 basis points per dollar traded in the US and 15 per euro traded in Europe. The 16 US and 15 European candidates were selected retrospectively. US results are in dollars and European results are in euros.
 
-The implemented test measures a specific part of that idea: two accounting signals select and weight stocks from a defined candidate universe. It produces auditable historical portfolio returns, holdings, scores and trades. The article's broader claims about managerial incentives, industrial-policy effectiveness and network spillovers are research hypotheses; this simulation does not identify those causal effects.
+| Portfolio | US direct support | US ungated | Europe direct support | Europe ungated |
+| --- | ---: | ---: | ---: | ---: |
+| Q50 | 378.08% | 400.06% | 286.95% | 295.22% |
+| Q75 | 389.82% | 539.17% | 338.92% | 376.92% |
+| Equal-weight candidate pool | 699.43% | 745.21% | 132.27% | 153.83% |
+
+Q50 and Q75 use the regional median and 75th-percentile scores as their entry thresholds. In the direct-support columns, a listed company with financial coverage also needs dated evidence of public support to the company or a subsidiary. The ungated columns use listing and financial coverage alone. Both selection rules trailed their equal-weight control in the US and beat it in Europe under both definitions.
+
+![Value of 100 in the US and European direct-support portfolios, with both US rules ending below equal weight and both European rules above it.](figures/direct-support-history.png)
 
 ## Quick start
 
-**Scoring and exit experiments:** [results and tradeoffs](results_recovery_experiments/REPORT.md)
-test eight alternatives against the existing strategy in both regions. The
-fundamental-improvement and price-momentum scores bring several US entries
-forward, but no alternative improves both US full-window returns without
-reducing at least one EU return. The fundamental-improvement gain is highly
-dependent on Bloom: without it, US Q50/Q75 gains versus baseline fall from
-+511.91pp/+205.69pp to −15.91pp/+19.60pp. Momentum survives every US omission,
-but loses in 14/15 EU Q50 omissions and 15/15 EU Q75 omissions. The largest US
-t-statistic against equal weight is 1.17, unadjusted for multiple comparisons.
-Recovery grace never activates: eight specified alternatives produce seven
-distinct alternative paths. The existing strategy remains the default. Reproduce with
-`python3 run_recovery_experiments.py` and audit with
-`python3 audit_recovery_experiments.py`; definitions and limitations are in
-[the experiment method](RECOVERY_EXPERIMENT_METHOD.md).
-The [review response](REVIEW_RESPONSE.md) records the support-screen scope,
-runner compatibility repairs and remaining evidence limitations. Automated
-checks cover Python 3.12, 3.13 and 3.14, including legacy runner reproduction,
-ledger replay, and numerical comparison of all 152 recomputed experiment
-portfolios with their saved ledgers. Numeric comparisons permit only roundoff
-(relative tolerance 1e-12, absolute 1e-10); dates, membership and discrete
-decisions must match. Run all unit tests with
-`python3 -m unittest discover -p 'test_*.py'`.
+From the root of a fresh checkout, run both commands using Python 3.10 or later. Allow about 40 seconds for the pair. They use the standard library and the data in this repository.
 
-**Current baseline comparison, 30 June 2019–2 November 2026:** all 31
-retrospective candidates are researched. The direct screen requires dated
-public-support evidence as well as listing and financial coverage; the ungated
-accounting panel requires listing and financial coverage. Returns include
-modeled costs, in USD for the US and EUR for Europe.
-
-| Rule | US direct screen | US ungated | EU direct screen | EU ungated |
-|---|---:|---:|---:|---:|
-| Existing Q50 | 378.08% | 400.06% | 286.95% | 295.22% |
-| Existing Q75 | 389.82% | 539.17% | 338.92% | 376.92% |
-| Equal weight | 699.43% | 745.21% | 132.27% | 153.83% |
-
-The direct screen excludes **TSMC until December 2024**. It also delays Alfen
-and briefly Micron; these choices change ranks and weights. The direct and
-ungated columns therefore compare different membership histories. Sources:
-[direct screen](results_pillar2/REPORT.md), [ungated accounting panel](results_long_history/REPORT.md).
-
-The US strategies trail their candidate-pool control; the EU strategies lead.
-These results supersede the original limited-coverage headline comparison for
-this broader, longer research question. The original release below remains an
-explicit historical snapshot, with its own dates and inputs.
-
-**Any prior public support screen:** [dated eligibility and results](results_pillar2/REPORT.md)
-audit all 31 candidates against dated government support, including programmes
-before CHIPS/IRA and the EU Chips Act. Run `python3 run_pillar2.py`; tests:
-`python3 -m unittest test_pillar2.py test_long_history.py test_research_corrections.py`.
-This broad historical extension is not a replication of the article's specified
-Pillar 2 streams, basket weights or event-driven entry dates. The direct screen
-excludes **79 of 2,614 listed company-months (3.0%)**; including indirect support
-excludes only **2 (0.08%)**. A small or long-completed award can qualify: no
-minimum award amount or ongoing-support requirement is imposed.
-The main panel requires named direct/subsidiary support; evidenced indirect
-beneficiaries are a separate sensitivity. Dates combine public policy evidence,
-actual listing/ownership and complete financial coverage. Historical admission
-does not imply that an earlier grant remains active or unspent. See the
-[eligibility definition](PILLAR2_METHOD.md) and every company's source ledger.
-[US/EU performance attribution](results_pillar2/ATTRIBUTION.md) reconciles the
-stock contributions behind the regional difference; regenerate it with
-`python3 analyze_pillar2.py` after the policy run.
-
-**Longer histories and timing repair:** [extended results](results_long_history/REPORT.md)
-recover older original annual statements across both full candidate pools.
-These are retrospective accounting-score tests. Neither the June 2019 main
-start nor the September 2019 matched timing start is justified by a government
-programme; the historical public-support screen is not applied.
-Run `python3 run_long_history.py`; tests: `python3 -m unittest test_long_history.py test_research_corrections.py`.
-The main start dates require complete price, FX and financial coverage for every
-then-listed eligible company. The timing sensitivity now extends freshness with
-the artificial delay, fixes the source-date control, and lists every coverage
-gap. A separate matched timing window also verifies that both equal-weight
-controls have identical monthly NAVs. The preceding correction report below
-is preserved as a snapshot; its unextended-freshness timing comparison is
-superseded by this repair.
-
-**Coverage, timing and concentration corrections:** use the
-[corrected comparison](results_research_corrected/REPORT.md) for the follow-up
-to the EU/US restorations below. Run `python3 run_research_corrections.py`.
-It fills Lam Research's four missing reports, corrects Safran's annual
-publication dates, applies a common information-delay sensitivity to all
-companies, and reports Bloom attribution, every US leave-one-out test and
-monthly active-return uncertainty. Bloom remains in the main universe.
-Earlier tables below are preserved research snapshots; their data gaps and
-timing conventions are documented in the correction report. Other unverified
-earlier earnings-release dates remain conservative filing dates, so compare
-both the evidenced-date and common-delay results.
-
-**Additional EU coverage experiment:** [EU restoration results](results_eu_restored/REPORT.md)
-restore all seven previously uncovered European candidates using 42 original
-annual reports/statements for FY2020–FY2025. Run `python3 run_eu_restoration.py`
-to reproduce that separate experiment. Its [method](EU_RESTORATION_METHOD.md),
-source evidence, coverage checks and ledgers accompany the results. The
-published reproduction described below retains its original inputs and outputs.
-
-**EU interim extension:** [Interim-data results](results_eu_interim/REPORT.md)
-add 92 original quarterly or half-year observations for those seven companies.
-Run `python3 run_eu_interim.py` to compare the restored pool with and without
-these interim updates. The [method](EU_INTERIM_METHOD.md), dated source records,
-twelve-month calculations and validation accompany the results.
-
-**US coverage extension:** [US restoration results](results_us_restored/REPORT.md)
-restore TSM, FSLR, PLUG, BE, ETN and GEV using annual and quarterly histories.
-Run `python3 run_us_restoration.py` to reproduce the original ten-company
-control and compare it with the restored pool. The
-[method](US_RESTORATION_METHOD.md) preserves the original trading rules and
-GE Vernova's listing date, and documents Eaton's derived operating subtotal.
-
-Clone this repository or extract `Actual_Dates_Backtest_Replication.zip`. Open a terminal in the directory containing `run_all.py`, `backtest.py` and `data/`. The ZIP names that directory `Actual_Dates_Backtest`.
-
-Check Python:
-
-```bash
-python3 --version
+```sh
+python3 run_pillar2.py
+python3 run_long_history.py
 ```
 
-Run the complete replication:
+The first command rebuilds the [direct-support results](results_pillar2/summary.csv) and the second rebuilds the [ungated results](results_long_history/summary.csv). To reproduce the table, select `window=cross_region` and `timing=source` in both files, plus `definition=direct` in the first. For the `q50`, `q75` and `equal` rows, multiply `total_return` by 100 and round to two decimal places. The chart uses the corresponding direct-support runs’ month-end portfolio values and the final 2 November valuation.
 
-```bash
-python3 run_all.py
-```
+## Research notes
 
-No API key, paid database, internet connection or third-party Python package is required for the core replication. On Windows, use `py -3` in place of `python3` if that is how Python is installed.
+- **Public support.** The direct screen excludes 79 of 2,614 listed company-months, including TSMC through November 2024. Awards may predate the policy programmes in the original article. [Eligibility rules](PILLAR2_METHOD.md) · [Company evidence and results](results_pillar2/REPORT.md) · [US and European attribution](results_pillar2/ATTRIBUTION.md)
+- **Financial history.** The longer accounting panel restores earlier statements. A separate September 2019 start compares publication delays with matched coverage. [Long-history results](results_long_history/REPORT.md) · [Timing method](LONG_HISTORY_METHOD.md)
+- **Alternative rules.** Eight scoring and exit variants test how sensitive the baseline is to the choice of signal. The US fundamental-improvement result depends heavily on Bloom Energy. [Experiment results](results_recovery_experiments/REPORT.md) · [Experiment method](RECOVERY_EXPERIMENT_METHOD.md) · [Review response](REVIEW_RESPONSE.md)
+- **Earlier coverage work.** The supporting studies document how additional companies and reporting periods entered the data. [US restoration](results_us_restored/REPORT.md) · [EU restoration](results_eu_restored/REPORT.md) · [EU interim reports](results_eu_interim/REPORT.md) · [Coverage and timing corrections](results_research_corrected/REPORT.md)
 
-The command rebuilds the financial inputs, calculates the packaged experiments, validates the results and writes CSV/LaTeX tables. It exits with a nonzero status if a stage fails. Successful completion ends with:
+## Original release results: preserved historical snapshot
 
-> Finished. See results_actual/ and tables_actual/. No network or API key was used.
+The 4 November 2026 first release tested a smaller covered pool over shorter windows. The US series begins on 30 September 2022 and the European series on 30 September 2021. Both end on 2 November 2026. The archived table includes the strategies, equal-weight controls, ETF benchmarks and risk statistics. [First-release results table](tables_actual/Paper_Summary_expanded.csv) · [First-release summary](results_actual/summary.csv)
 
-**Rerunning overwrites the generated inputs and result/table files.** Keep an untouched extraction or Git commit for comparison. Use `run_all.py` as the entry point: it selects the actual-publication-date input pipeline used by the results documented here.
+To reproduce that release, run `python3 run_all.py` from the repository root. It regenerates the original inputs and writes to `results_actual/` and `tables_actual/`.
+
+<details>
+<summary>Verify the first-release files and inspect its portfolio ledgers</summary>
 
 ### Check file integrity
 
@@ -151,37 +53,9 @@ python3 -c 'import hashlib,json,sys; from pathlib import Path; rows=[r for name 
 
 The release contains **489 input-manifest entries and 1,138 result-manifest entries**. [REPLICATION_VERIFICATION.json](REPLICATION_VERIFICATION.json) records an exact match of all 1,138 generated result/table files after a clean extraction and rerun. These manifests check the listed data and output bytes; they do not cover every source-code or documentation file. Preserve the Git commit when citing or extending a run.
 
-## Original release results: preserved historical snapshot
-
-The headline specification is `panel=actual_expanded`, `window=matched`, `rule=q75` or `q50`, with trading costs of 10 basis points in the US and 15 in Europe. "Expanded" is the code's name for the panel admitting all complete annual and interim/TTM observations supplied in this snapshot.
-
-US portfolios run from **30 September 2022 to 2 November 2026**, in USD. European portfolios run from **30 September 2021 to 2 November 2026**, in EUR. Within each region, the strategies and their controls share the same dates. The regional windows differ, so these are not like-for-like US-versus-Europe comparisons.
-
-| Metric | US Q75 | US Q50 | EU Q75 | EU Q50 |
-| --- | ---: | ---: | ---: | ---: |
-| Strategy cumulative return | 173.32% | 189.52% | 57.07% | 71.38% |
-| Strategy annualized return (CAGR) | 27.87% | 29.68% | 9.28% | 11.16% |
-| ETF benchmark cumulative return | 139.63% | 139.63% | 10.18% | 10.18% |
-| ETF benchmark CAGR | 23.82% | 23.82% | 1.92% | 1.92% |
-| Covered-stock equal-weight control return | 148.75% | 148.75% | 89.02% | 89.02% |
-| Maximum drawdown, monthly observations | -34.89% | -28.45% | -33.79% | -31.47% |
-| Observed number of holdings | 3-6 | 5-7 | 2-4 | 3-5 |
-| Final number of holdings | 6 | 7 | 4 | 5 |
-| Final wealth from 100 units of starting capital | 273.32 | 289.52 | 157.07 | 171.38 |
-
-Source: [results_actual/summary.csv](results_actual/summary.csv), using the filters above, and [Paper_Summary_expanded.csv](tables_actual/Paper_Summary_expanded.csv). Returns include modeled strategy/control trading costs; the ETF mixes are frictionless comparisons.
-
-Both US strategies outperform both controls over their specified window. Both European strategies outperform the ETF mix but underperform the covered-stock equal-weight control. Q50 returns exceed Q75 by 16.20 percentage points in the US and 14.30 points in Europe. These comparisons describe this historical sample, not an established advantage in unseen data.
-
-To print the four headline rows directly from the computed summary:
-
-```bash
-python3 -c 'import csv; rows=csv.DictReader(open("results_actual/summary.csv",newline="")); [print(r["region"],r["rule"].upper(),"return="+format(float(r["total_return"]),".2%"),"CAGR="+format(float(r["CAGR"]),".2%"),"monthly_drawdown="+format(float(r["max_drawdown_monthly"]),".2%")) for r in rows if r["panel"] == "actual_expanded" and r["window"] == "matched" and r["rule"] in ("q75","q50")]'
-```
-
 ### Exact result directories
 
-Each linked directory contains the ledgers for one headline portfolio.
+Each directory contains the ledgers for one first-release portfolio.
 
 | Portfolio | Result directory |
 | --- | --- |
@@ -194,9 +68,11 @@ The `lag0` identifier means no extra fixed lag is added to the evidenced publica
 
 The corresponding equal-weight control uses the same directory name with `q75` or `q50` replaced by `equal`.
 
+</details>
+
 ## How this connects to the article
 
-The article supplies the economic motivation. This table connects its named concepts to the implemented constructs and their limits. Section links use browser text fragments; the full article remains available through the title link above.
+The article supplies the economic motivation. This table connects its named concepts to the implemented constructs and their limits. Section links use browser text fragments; the links in this table point to sections of the original essay.
 
 | Article concept | Implementation in this repository |
 | --- | --- |
@@ -206,7 +82,7 @@ The article supplies the economic motivation. This table connects its named conc
 | [Pillar 2: Industrial policy][article-policy] | [The any prior public support screen](results_pillar2/REPORT.md) is a broader historical extension, not a replication of the article's specified streams, baskets or entry examples. It excludes 3.0% of listed company-months under direct support, or 0.08% including indirect support. It does not measure award materiality, ongoing support or subsidy utilization, and the 31 candidates are not an exhaustive historical universe. |
 | [Pillar 3: Competition and collaboration][article-network] | Network centrality, patent spillovers and geographic-cluster effects are unmeasured. They contribute no fabricated score or weight. |
 | [Interaction of the three pillars][article-interaction] | The implemented composite combines two accounting ranks. Position weights are equal weights with a small financial-score tilt; they do not measure a collaboration premium or time-varying pillar interactions. |
-| [Reproducible backtests][article-replication] | [run_all.py](run_all.py), frozen inputs, source records, validation and file manifests provide a computational audit trail. |
+| [Reproducible backtests][article-replication] | The [public-support runner](run_pillar2.py) and [long-history runner](run_long_history.py) reproduce the current comparison from frozen inputs. Each writes a summary, portfolio ledgers and validation results. |
 
 [article-problem]: https://mitleadtrades.substack.com/p/performative-beta-trap-correcting#:~:text=Part%201%20-%20the%20Problem
 [article-solution]: https://mitleadtrades.substack.com/p/performative-beta-trap-correcting#:~:text=Part%202%20-%20The%20Solution
@@ -257,7 +133,7 @@ ROCE here uses closing balance-sheet capital, not average capital or ROIC minus 
 | Score exit | An existing holding exits at a quarter-end review if its score is at or below Q25. An incumbent can remain below its admission threshold while still above Q25. |
 | Data/eligibility exit | Loss of usable data or eligibility can remove a holding at a monthly review, including outside quarter-end. This is logged separately from a score exit. |
 | Holding bounds | Between 1 and 9 stocks. If the survivor/qualifier set exceeds 9, retain the highest scores, with ticker order breaking exact score ties. |
-| Minimum fallback | If needed, admit the highest-scoring available company above Q25 to meet the one-stock minimum; log the exception. No such admission occurs in the four headline runs. |
+| Minimum fallback | If needed, admit the highest-scoring available company above Q25 to meet the one-stock minimum; log the exception. The four first-release portfolios recorded no such admission. |
 | Coverage requirement | At least four eligible, scored companies are required for the simulation to continue, even though the portfolio may hold fewer. Insufficient coverage raises an error. |
 | Monthly allocation | Start each holding at `1 / number_of_holdings`; add 0.015 to a holding whose score is at or above regional Q75; normalize the weights once to sum to one. |
 
@@ -290,7 +166,7 @@ The last complete monthly valuation is labeled **31 October 2026**, using the ob
 
 ## Data and provenance
 
-There are **333 original financial observations**, yielding **310 complete scoring inputs: 103 annual and 207 TTM**. Twenty-three observations lack components required to form complete scoring inputs. Complete records exist for **18 of the 31 candidates**, comprising 10 US and 8 European companies.
+The first release contains **333 original financial observations**, yielding **310 complete scoring inputs: 103 annual and 207 TTM**. Twenty-three observations lack components required to form complete scoring inputs. Complete records exist for **18 of the 31 candidates**, comprising 10 US and 8 European companies.
 
 | Coverage in the supplied financial records | Companies |
 | --- | --- |
@@ -298,7 +174,7 @@ There are **333 original financial observations**, yielding **310 complete scori
 | Europe, annual and interim/TTM | AIR.PA, ASML, IFX.DE, NXPI, STMPA.PA |
 | Europe, annual only | EDF.PA, ENEL.MI, VIE.PA |
 
-Coverage across the dataset does not imply continuous eligibility or a portfolio position on every date. The other 13 candidates receive no neutral score, zero-filled inputs or vendor-financial fallback in the headline specification. An exclusion for missing captured data is not evidence that the issuer failed to report.
+Coverage across the dataset does not imply continuous eligibility or a portfolio position on every date. The other 13 candidates receive no neutral score, zero-filled inputs or vendor-financial fallback in that first-release specification. An exclusion for missing captured data is not evidence that the issuer failed to report.
 
 | Evidence | Location |
 | --- | --- |
@@ -319,6 +195,8 @@ Follow the source URLs and observation/component identifiers to audit a value ba
 
 ### Computation pipeline
 
+The table below documents the first-release pipeline. The two current runners and their outputs are in the [quick start](#quick-start).
+
 | File | Responsibility |
 | --- | --- |
 | [run_all.py](run_all.py) | Runs the following four stages in order, using the same Python interpreter. |
@@ -328,14 +206,16 @@ Follow the source URLs and observation/component identifiers to audit a value ba
 | [make_actual_tables.py](make_actual_tables.py) | Produces CSV and LaTeX tables, including the headline summaries and quarterly histories. |
 | [backtest.py](backtest.py) | Shared scoring, selection, FX, valuation, rebalancing and performance calculations. |
 
-The full command generates 114 experiment summaries. To identify the results documented in this README, use the explicit `actual_expanded` / `matched` / `q75,q50` filters, rather than selecting rows by their position in a file.
+The full command generates 114 experiment summaries. To find the four first-release portfolios, select `panel=actual_expanded`, `window=matched` and either `rule=q75` or `rule=q50`.
 
 ### Inspect the results
+
+These files belong to the first release.
 
 | Output | Contents |
 | --- | --- |
 | [summary.csv](results_actual/summary.csv) | Run identifiers, parameters, dates, cumulative returns, CAGR, risk statistics, costs and controls. |
-| [Paper_Summary_expanded.csv](tables_actual/Paper_Summary_expanded.csv) and [.tex](tables_actual/Paper_Summary_expanded.tex) | Headline four-portfolio performance table. |
+| [Paper_Summary_expanded.csv](tables_actual/Paper_Summary_expanded.csv) and [.tex](tables_actual/Paper_Summary_expanded.tex) | First-release four-portfolio performance table. |
 | [08_Expanded_Monthly.csv](tables_actual/08_Expanded_Monthly.csv) | Monthly portfolio and benchmark histories. |
 | [09_Expanded_Quarterly_Scores.csv](tables_actual/09_Expanded_Quarterly_Scores.csv) | Quarter-end company scores and threshold information. |
 | [10_Expanded_Events.csv](tables_actual/10_Expanded_Events.csv) | Admissions, exits and reentries. |
@@ -359,7 +239,7 @@ Monthly risk statistics stop at the complete month-end; the total-return/CAGR en
 
 ## Validation and interpretation
 
-The packaged checks cover 310 complete dated inputs, 140 quarter-to-annual reconciliations, 49,149 score-row timing/freshness checks, 6,600 monthly portfolio accounts and 39,120 trade-cost rows across the computation. Exact reproduction establishes that the supplied inputs and code generate the recorded outputs.
+The first-release checks cover 310 complete dated inputs, 140 quarter-to-annual reconciliations, 49,149 score-row timing/freshness checks, 6,600 monthly portfolio accounts and 39,120 trade-cost rows across the computation. Exact reproduction establishes that the supplied inputs and code generate the recorded outputs.
 
 It does not establish a complete historical investable index. The candidate universe is retrospective, financial coverage is incomplete, and accounting definitions and restatements across issuers are not comprehensively harmonized. Source dates are evidenced, but the package is not a certified archive of every first-published document version. Public price histories can contain errors or retrospective corporate-action adjustments.
 
@@ -387,7 +267,7 @@ Please cite the article for the conceptual framework:
 
 > MIT LEAD's Research to Trades. (2026, June 3). *"Performative beta trap"-correcting ETFs: Going beyond headlines with Mechanism Design to cultivate crowd wisdom, at scale.* [Substack](https://mitleadtrades.substack.com/p/performative-beta-trap-correcting).
 
-For numerical replication, also identify **Performative Beta Trap: ETF Backtest Replication, research snapshot 4 November 2026, market-data endpoint 2 November 2026**, and include the repository URL, exact Git commit and run identifier used. Retain the input/result manifests with any reported replication.
+For numerical replication, identify the panel, date range, repository URL, exact Git commit and run identifier. The current comparison ends on 2 November 2026. Retain the input/result manifests with any reported replication.
 
 Citation is requested for research attribution; it is not an additional condition of the MIT license.
 
